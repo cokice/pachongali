@@ -4,8 +4,11 @@ from bs4 import BeautifulSoup
 import re
 from docx import Document
 
-# 要爬取的网址,替换掉双引号内的内容，注意要保留双引号
-url = "<链接>"
+# 要爬取的网址，替换双引号的内容
+url = "链接"
+
+# 创建一个新的 Word 文档
+doc = Document()
 
 # 处理单个链接的函数
 def process_link(link):
@@ -25,7 +28,11 @@ def process_link(link):
                 output_str = "### " + title.strip() + "\n"  # 构建输出字符串
                 output_str += "\n".join(keyword.strip() for keyword in keywords) + "\n\n"  # 构建关键词部分
                 print(output_str)  # 在控制台输出
-                return title, keywords  # 返回结果
+                # 将结果添加到 Word 文档中，并保存文档
+                doc.add_heading(title, level=3)
+                for keyword in keywords:
+                    doc.add_paragraph(keyword)
+                doc.save("output.docx")
 
 # 发送 HTTP GET 请求获取网页内容
 response = requests.get(url)
@@ -38,20 +45,8 @@ soup = BeautifulSoup(html_content, "html.parser")
 # 在这个例子中，找到所有的链接，并筛选出以特定前缀开头的链接
 links = soup.find_all("a", href=re.compile("//www.alibaba.com/product-detail"))
 
-# 创建一个新的 Word 文档
-doc = Document()
-
 # 使用 ThreadPoolExecutor 并发处理链接，最多同时处理 4 个链接
 with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
     future_to_output = {executor.submit(process_link, link): link for link in links}
     for future in concurrent.futures.as_completed(future_to_output):
-        result = future.result()
-        if result:
-            title, keywords = result
-            # 将结果添加到 Word 文档中
-            doc.add_heading(title, level=3)
-            for keyword in keywords:
-                doc.add_paragraph(keyword)
-
-# 保存 Word 文档
-doc.save("output.docx")
+        pass  # 不需要再这里处理结果，因为结果已经在 process_link 函数中处理了
